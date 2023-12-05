@@ -1,18 +1,150 @@
 <template>
-  <div class="home">
-    <img alt="Vue logo" src="../assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+<div class="container">
+  <div class="map">
+    <l-map 
+      :options="{attributionControl:false, zoomControl:false}"
+      :zoom="valuesStore.mapOptions.zoom" 
+      :center="valuesStore.mapOptions.center"
+      @update:zoom="zoomUpdated"
+      @update:center="centerUpdated"
+      @update:bounds="boundsUpdated"
+      @click="addmarker"
+    >
+      <!-- <l-tile-layer
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        layer-type="base"
+        name="OpenStreetMap"
+      ></l-tile-layer> -->
+      <l-tile-layer
+        v-for="tileProvider in valuesStore.mapOptions.tileProviders"
+        :key="tileProvider.name"
+        :name="tileProvider.name"
+        :visible="tileProvider.visible"
+        :url="tileProvider.url"
+        :attribution="tileProvider.attribution"
+        layer-type="base"
+      />
+      <l-control-layers />
+      <l-marker 
+        v-for="(marker) in valuesStore.mapOptions.markers" 
+        :key="marker" 
+        :lat-lng="marker" 
+        @click="removemarker(marker)"
+      ></l-marker>
+      <l-polyline v-if="valuesStore.mapOptions.polyline" :lat-lngs="valuesStore.mapOptions.polyline" color="#057D9F"></l-polyline>
+      <l-circle 
+        v-if="valuesStore.mapOptions.circleCenter"
+        :lat-lng="valuesStore.mapOptions.circleCenter"
+        :radius="100"
+        color="#61B7CF"
+      />
+      <l-circle 
+        v-if="valuesStore.mapOptions.circleCenter"
+        :lat-lng="valuesStore.mapOptions.circleCenter"
+        :radius="1"
+        color="#057D9F"
+      />
+    </l-map>
   </div>
+  <div class="tools">
+    <SpoofingView v-if="page == 'spoofing'" />
+    <ReportsView v-if="page == 'reports'" />
+    <SystemView v-if="page == 'system'" />
+    <SettingsView v-if="page == 'settings'" />
+  </div>
+</div>
 </template>
-
 <script>
-// @ is an alias to /src
-import HelloWorld from '@/components/HelloWorld.vue'
-
-export default {
-  name: 'HomeView',
-  components: {
-    HelloWorld
+import SpoofingView from '@/components/spoofing/SpoofingView.vue';
+import ReportsView from '@/components/reports/ReportsView.vue';
+import SystemView from '@/components/system/SystemView.vue';
+import SettingsView from '@/components/settings/SettingsView.vue';
+import "leaflet/dist/leaflet.css";
+// import axios from 'axios'
+import { 
+    LMap, 
+    LTileLayer, 
+    LMarker, 
+    LControlLayers,
+    LCircle,
+    LPolyline,
+    // LIcon, 
+    // LPopup,
+    // LTooltip
+} from "@vue-leaflet/vue-leaflet";
+import {useValuesStore} from '@/store/index.js'
+import {mapStores} from 'pinia';
+export default{
+  computed:{
+    ...mapStores(useValuesStore)
+  },
+  props:['page'],
+  components:{
+    SpoofingView,
+    ReportsView,
+    SystemView,
+    SettingsView,
+    LMap,
+    LTileLayer,
+    LControlLayers,
+    LMarker,
+    LCircle,
+    LPolyline,
+  },
+  data(){
+    return{}
+  },
+  methods:{
+    async boundsUpdated (bounds) {this.bounds = bounds;},
+    async zoomUpdated (zoom) {this.zoom = zoom;},
+    async centerUpdated (center) {this.center = center;},
+    removemarker(index) {
+      // this.valuesStore.mapOptions.markers.splice(index, 1);
+      this.valuesStore.mapOptions.markers = this.valuesStore.mapOptions.markers.filter(element => element != index)
+      this.valuesStore.createScript.coordinates = null;
+      this.valuesStore.mapOptions.polyline = [];
+    },
+    addmarker(event) {
+      if (this.valuesStore.mapOptions.mode == 'static'){
+        this.valuesStore.mapOptions.markers = [event.latlng];
+        this.valuesStore.createScript.coordinates = `${event.latlng.lat},${event.latlng.lng}`;
+      } else if (this.valuesStore.mapOptions.mode == 'dynamic'){
+        if (this.valuesStore.mapOptions.markers.length < 2){
+          this.valuesStore.mapOptions.markers.push(event.latlng);
+          if (this.valuesStore.mapOptions.markers.length == 2) {
+            this.valuesStore.mapOptions.polyline = [
+              [this.valuesStore.mapOptions.markers[0].lat, this.valuesStore.mapOptions.markers[0].lng],
+              [this.valuesStore.mapOptions.markers[1].lat, this.valuesStore.mapOptions.markers[1].lng]
+            ]
+          }
+        } 
+      }
+    },
+  },
+  async mounted(){
+    navigator.geolocation.getCurrentPosition((e) => {
+      this.valuesStore.mapOptions.center = [e.coords.latitude, e.coords.longitude];
+      this.valuesStore.mapOptions.zoom = 20;
+      this.valuesStore.mapOptions.circleCenter = [e.coords.latitude, e.coords.longitude];
+    });
   }
 }
 </script>
+<style scoped lang="scss">
+.container{
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 600px;
+  .map{
+    grid-column: 1;
+    background-color: rgb(212, 146, 45);
+  }
+  .tools{
+    grid-column: 2;
+    padding-left: 10px;
+    -webkit-box-shadow: -20px 0px 20px -16px rgba(34, 60, 80, 0.2);
+    -moz-box-shadow: -20px 0px 20px -16px rgba(34, 60, 80, 0.2);
+    box-shadow: -20px 0px 20px -16px rgba(34, 60, 80, 0.2);
+  }
+}
+</style>
