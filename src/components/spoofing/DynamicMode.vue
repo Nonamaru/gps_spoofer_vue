@@ -29,13 +29,13 @@
         <text v-if="scriptReady">Расчет завершен!</text>
     </div>
     <div class="start-stop">
-        <button :class="{loopActive: startScript.loop}" @click="startScript.loop = !startScript.loop">Цикличное воспроизведение</button>
+        <button :class="{loopActive: valuesStore.startScript.dynamicLoop}" @click="valuesStore.startScript.dynamicLoop = !valuesStore.startScript.dynamicLoop">Цикличное воспроизведение</button>
         <div>
-            <button :class="{ButtonActive: startScript.isStarted}">
-                <text v-if="!startScript.isStarted" @click="startScript.isStarted = true; setupScript()">Запустить</text>
-                <text v-if="startScript.isStarted">Запущено!</text>
+            <button :class="{ButtonActive: valuesStore.startScript.dynamicIsStarted}">
+                <text v-if="!valuesStore.startScript.dynamicIsStarted" @click="valuesStore.startScript.dynamicIsStarted = true; setupScript()">Запустить</text>
+                <text v-if="valuesStore.startScript.dynamicIsStarted">Запущено!</text>
             </button>
-            <button v-if="startScript.isStarted && startScript.loop" @click="startScript.isStarted = false">Остановить</button>
+            <button v-if="valuesStore.startScript.dynamicIsStarted && valuesStore.startScript.dynamicLoop" @click="valuesStore.startScript.dynamicIsStarted = false">Остановить</button>
         </div>
     </div>
 </div>
@@ -51,10 +51,6 @@ export default{
         return{
             another: false,
             scriptReady: false,
-            startScript:{
-                isStarted: false,
-                loop: false,
-            }
         }
     },
     methods:{
@@ -139,9 +135,9 @@ export default{
             //   });
         },
         setupScript(){
-            if (this.startScript.loop == false){
-                console.log('loop true');
-                setTimeout(() => {this.startScript.isStarted = false}, 2000);
+            if (this.valuesStore.startScript.dynamicLoop == false){
+                console.log('dynamicLoop true');
+                setTimeout(() => {this.valuesStore.startScript.dynamicIsStarted = false}, 2000);
             }
         }
     }

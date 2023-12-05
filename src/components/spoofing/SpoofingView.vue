@@ -25,6 +25,7 @@ import DynamicMode from '@/components/spoofing/DynamicMode.vue';
 import { useValuesStore } from '@/store/index.js';
 import { mapStores } from 'pinia';
 import { useCookies } from "vue3-cookies";
+import axios from 'axios';
 export default{
     setup() {
         const { cookies } = useCookies();
@@ -46,7 +47,10 @@ export default{
     },
     methods:{
         status(){
-            setTimeout(() => this.activateStatus = false, 1000);
+            setTimeout(() => {
+                this.activateStatus = false;
+                this.sendReport()
+            }, 1000);
         },
         switchMode(mode){
             this.mode = mode;
@@ -57,6 +61,17 @@ export default{
         },
         setGpsL2(data){
             this.cookies.set("gpsl2", data);
+        },
+        sendReport(){
+            const body = {
+                date: `${new Date().toJSON().slice(0, 10)}`, 
+                desc: `${this.gpsl2 ? 'Подавление GPS L2 Включено' : 'Подавление GPS L2 Выключено'}`, 
+                time: `${new Date().toLocaleTimeString()}`,
+            };
+            const headers = {
+              'Content-Type': 'application/x-www-form-urlencoded'
+            }
+            axios.post("https://localhost:8081/writeReport", body, {headers});
         }
     },
     mounted(){

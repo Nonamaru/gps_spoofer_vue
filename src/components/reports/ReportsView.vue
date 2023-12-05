@@ -55,7 +55,7 @@ export default{
             border-radius: var(--border-radius);
             width: 92%;
             display: grid;
-            grid-template-columns: 10% 1fr 5%;
+            grid-template-columns: 12% 1fr 8%;
             position: relative;
             .date{
                 grid-column: 1;

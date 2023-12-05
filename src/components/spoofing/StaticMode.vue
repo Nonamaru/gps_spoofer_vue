@@ -22,13 +22,13 @@
         <button>Создать сценарий</button>
     </div>
     <div class="start-stop">
-        <button :class="{loopActive: startScript.loop}" @click="startScript.loop = !startScript.loop">Цикличное воспроизведение</button>
+        <button :class="{loopActive: valuesStore.startScript.staticLoop}" @click="valuesStore.startScript.staticLoop = !valuesStore.startScript.staticLoop">Цикличное воспроизведение</button>
         <div>
-            <button :class="{ButtonActive: startScript.isStarted}">
-                <text v-if="!startScript.isStarted" @click="startScript.isStarted = true; setupScript()">Запустить</text>
-                <text v-if="startScript.isStarted">Запущено!</text>
+            <button :class="{ButtonActive: valuesStore.startScript.staticIsStarted}">
+                <text v-if="!valuesStore.startScript.staticIsStarted" @click="valuesStore.startScript.staticIsStarted = true; setupScript()">Запустить</text>
+                <text v-if="valuesStore.startScript.staticIsStarted">Запущено!</text>
             </button>
-            <button v-if="startScript.isStarted && startScript.loop" @click="startScript.isStarted = false">Остановить</button>
+            <button v-if="valuesStore.startScript.staticIsStarted && valuesStore.startScript.staticLoop" @click="valuesStore.startScript.staticIsStarted = false; this.sendReport(this.valuesStore.startScript.staticLoop);">Остановить</button>
         </div>
     </div>
 </div>
@@ -36,7 +36,8 @@
 <script>
 import {useValuesStore} from '@/store/index.js';
 import {mapStores} from 'pinia';
-import { useCookies } from "vue3-cookies";
+import {useCookies} from "vue3-cookies";
+import axios from 'axios';
 export default{
     setup(){
         const { cookies } = useCookies();
@@ -48,10 +49,6 @@ export default{
     data(){
         return{
             another: false,
-            startScript:{
-                isStarted: false,
-                loop: false,
-            }
         }
     },
     methods:{
@@ -67,10 +64,27 @@ export default{
             this.valuesStore.createScript.height = height;
         },
         setupScript(){
-            if (this.startScript.loop == false){
-                console.log('loop true');
-                setTimeout(() => {this.startScript.isStarted = false}, 2000);
+            if (this.valuesStore.startScript.staticLoop == false){
+                setTimeout(() => {this.valuesStore.startScript.staticIsStarted = false; this.sendReport(this.valuesStore.startScript.staticLoop);}, 2000);
             }
+            this.sendReport(this.valuesStore.startScript.staticLoop);
+        },
+        sendReport(isLoop){
+            let desc;
+            if(isLoop == true){
+                desc = (this.valuesStore.startScript.staticLoop && this.valuesStore.startScript.staticIsStarted) ? 'Запущен статический режим (циклично)' : 'Остановлен статический режим (циклично)'
+            } else {
+                desc = this.valuesStore.startScript.staticIsStarted ? 'Запущен статический режим' : 'Остановлен статический режим';
+            }
+            const body = {
+                date: `${new Date().toJSON().slice(0, 10)}`, 
+                desc: `${desc}`, 
+                time: `${new Date().toLocaleTimeString()}`,
+            };
+            const headers = {
+              'Content-Type': 'application/x-www-form-urlencoded'
+            }
+            axios.post("https://localhost:8081/writeReport", body, {headers});
         }
     }
 }

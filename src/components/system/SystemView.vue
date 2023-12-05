@@ -9,7 +9,13 @@
             </tr>
             <tr>
                 <th>Обновление GPS</th>
-                <td>{{valuesStore.systemOpions.lastUpdate}}</td>
+                <td 
+                    @mouseover="isUpdateButton = true"
+                    @mouseleave="isUpdateButton = false"
+                >
+                    <text v-if="!isUpdateButton">{{valuesStore.systemOpions.lastUpdate}}</text>
+                    <button class="update-button" v-if="isUpdateButton" @click="updateGps()">{{ updateButtonStatus }}</button>
+                </td>
             </tr>
             <tr>
                 <th>Свободно памяти</th>
@@ -26,7 +32,6 @@
                 <td class="find"><text @click="currentPosition()">Найти устройство</text></td>
             </tr>
         </table>
-        <button @click="sending()">send</button>
     </div>
 </div>
 </template>
@@ -42,6 +47,12 @@ export default{
             return state.connected;
         }
     },
+    data(){
+        return{
+            isUpdateButton: false,
+            updateButtonStatus: 'Update'
+        }
+    },
     methods:{
         currentPosition(){
             navigator.geolocation.getCurrentPosition((e) => {
@@ -49,12 +60,22 @@ export default{
               this.valuesStore.mapOptions.zoom = 20;
               this.valuesStore.mapOptions.circleCenter = [e.coords.latitude, e.coords.longitude];
             });
+            this.sendReport();
         },
-        async sending(){
-            const sosiska = {date: "10.10.10", desc: "ya tut", time: "10:10"};
-            // const headers = {'Content-Type': 'application/json'};
-            const response = await axios.post("https://localhost:8081/writeReport", sosiska);
-            console.log(response);
+        sendReport(){
+            const body = {
+                date: `${new Date().toJSON().slice(0, 10)}`, 
+                desc: "Найдено устройство", 
+                time: `${new Date().toLocaleTimeString()}`,
+            };
+            const headers = {
+              'Content-Type': 'application/x-www-form-urlencoded'
+            }
+            axios.post("https://localhost:8081/writeReport", body, {headers});
+        },
+        updateGps(){
+            this.updateButtonStatus = "Updating...";
+            setTimeout(() => {this.updateButtonStatus = 'Update success!'}, 2000);
         }
     },
     mounted(){
@@ -87,6 +108,22 @@ export default{
                 border: 1px solid black;
                 padding: 4px 8px;
                 border-radius: var(--border-radius);
+                .update-button{
+                    border: 1px solid black;
+                    width: 90%;
+                    height: 90%;
+                    background-color: lightgray;
+                    font-size: 1rem;
+                    padding: 4px 8px;
+                    border-radius: var(--border-radius);
+                    color: var(--text-color);
+                    cursor: pointer;
+                    &:active{
+                        background-color: black;
+                        color: white;
+                        font-weight: bold;
+                    }
+                }
             }
             .find{
                 text-decoration: underline;

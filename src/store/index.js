@@ -16,6 +16,11 @@ import {defineStore} from 'pinia'
 
 export const useValuesStore = defineStore('values', {
   state: () => ({ 
+    requests:{
+      host: 'https://localhost:8081',
+      showReports: '/showReports',
+      writeReport: '/writeReport'
+    },
     createScript: {
       coordinates: null,
       height: 1500,
@@ -24,6 +29,12 @@ export const useValuesStore = defineStore('values', {
     calculateScript:{
       height: 1500,
       speed: 0.001,
+    },
+    startScript:{
+      dynamicIsStarted: false,
+      dynamicLoop: false,
+      staticIsStarted: false,
+      staticLoop: false,
     },
     systemOpions:{
       ip: '192.168.0.121',
