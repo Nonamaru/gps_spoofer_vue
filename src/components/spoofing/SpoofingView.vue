@@ -2,8 +2,8 @@
 <div class="spoofing">
     <div class="spoofing-header">Спуфинг</div>
     <div class="spoofing-nav">
-        <div class="mode" :class="{SelectedMode: mode == 'static'}" @click="switchMode('static')">Статический</div>
-        <div class="mode" :class="{SelectedMode: mode == 'dynamic'}" @click="switchMode('dynamic')">Динамический</div>
+        <div class="mode" :class="{SelectedMode: valuesStore.mapOptions.mode == 'static'}" @click="switchMode('static')">Статический</div>
+        <div class="mode" :class="{SelectedMode: valuesStore.mapOptions.mode == 'dynamic'}" @click="switchMode('dynamic')">Динамический</div>
     </div>
     <div class="spoofing-tool">
         <div 
@@ -14,8 +14,8 @@
             Подавление GPS L2
             <text class="status" :class="{statusChange: activateStatus == true}">{{gpsl2 ? "Активно" : "Неактивно"}}</text>
         </div>
-        <StaticMode :soloCoordinate="soloCoordinate" v-if="mode == 'static'" />
-        <DynamicMode v-if="mode == 'dynamic'" />
+        <StaticMode :soloCoordinate="soloCoordinate" v-if="valuesStore.mapOptions.mode == 'static'" />
+        <DynamicMode v-if="valuesStore.mapOptions.mode == 'dynamic'" />
     </div>
 </div>
 </template>
@@ -40,7 +40,6 @@ export default{
     },
     data(){
         return{
-            mode: 'static',
             gpsl2: false,
             activateStatus: false,
         }
@@ -53,7 +52,6 @@ export default{
             }, 1000);
         },
         switchMode(mode){
-            this.mode = mode;
             this.valuesStore.mapOptions.mode = mode;
             this.valuesStore.mapOptions.markers = [];
             this.valuesStore.mapOptions.polyline = [];

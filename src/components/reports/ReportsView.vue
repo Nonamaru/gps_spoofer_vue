@@ -29,7 +29,7 @@ export default{
     },
     async mounted(){
         const response = await axios.get('https://localhost:8081/showReports');
-        this.reports = response.data;
+        this.reports = response.data.reverse();
     }
 }
 </script>

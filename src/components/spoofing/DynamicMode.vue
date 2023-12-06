@@ -25,8 +25,9 @@
                 <div class="option" :class="{selectedOption: valuesStore.calculateScript.speed == 0.005}" @click="valuesStore.calculateScript.speed = 0.005" >166 км/ч</div>
             </div>
         </span>
-        <button @click="calcDistance()" id="calcButton">Расчитать</button>
-        <text v-if="scriptReady">Расчет завершен!</text>
+        <button @click="calcDistance()" id="calcButton">
+            {{ scriptReady ? "Расчет завершен!" : "Расчитать" }}
+        </button>
     </div>
     <div class="start-stop">
         <button :class="{loopActive: valuesStore.startScript.dynamicLoop}" @click="valuesStore.startScript.dynamicLoop = !valuesStore.startScript.dynamicLoop">Цикличное воспроизведение</button>
@@ -41,8 +42,9 @@
 </div>
 </template>
 <script>
-import {useValuesStore} from '@/store/index.js'
-import {mapStores} from 'pinia'
+import {useValuesStore} from '@/store/index.js';
+import {mapStores} from 'pinia';
+import axios from 'axios';
 export default{
     computed:{
         ...mapStores(useValuesStore)
@@ -127,6 +129,8 @@ export default{
             document.getElementById('calcButton').innerHTML = 'Расчитать';
             document.getElementById('calcButton').disabled = false;
             this.scriptReady = true;
+            setTimeout(() => {this.scriptReady = false}, 2000);
+            this.sendReport("calculate");
             // document.getElementById('calcButton').innerHTML = 'Создание сценария';
             // send({x: 'csvFile', file: csvPointsArray}, './post.php')
             //   .then(() => {
@@ -136,9 +140,28 @@ export default{
         },
         setupScript(){
             if (this.valuesStore.startScript.dynamicLoop == false){
-                console.log('dynamicLoop true');
-                setTimeout(() => {this.valuesStore.startScript.dynamicIsStarted = false}, 2000);
+                setTimeout(() => {this.valuesStore.startScript.dynamicIsStarted = false; this.sendReport(this.valuesStore.startScript.dynamicLoop);}, 2000);
             }
+            this.sendReport(this.valuesStore.startScript.dynamicLoop);
+        },
+        sendReport(isLoop){
+            let desc;
+            if (isLoop == 'calculate'){
+                desc = "Расчет скрипта";
+            } else if(isLoop == true){
+                desc = (this.valuesStore.startScript.dynamicLoop && this.valuesStore.startScript.dynamicIsStarted) ? 'Запущен динамический режим (циклично)' : 'Остановлен динамический режим (циклично)'
+            } else {
+                desc = this.valuesStore.startScript.dynamicIsStarted ? 'Запущен динамический режим' : 'Остановлен динамический режим';
+            }
+            const body = {
+                date: `${new Date().toJSON().slice(0, 10)}`, 
+                desc: `${desc}`, 
+                time: `${new Date().toLocaleTimeString()}`,
+            };
+            const headers = {
+              'Content-Type': 'application/x-www-form-urlencoded'
+            }
+            axios.post("https://localhost:8081/writeReport", body, {headers});
         }
     }
 }

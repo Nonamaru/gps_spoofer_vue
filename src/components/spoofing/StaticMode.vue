@@ -19,7 +19,9 @@
             <text>Время выполнения сценария (секунды)</text>
             <input type="number" placeholder="180 минимально" v-model="valuesStore.createScript.time" @keydown="checkTime()" />
         </span>
-        <button>Создать сценарий</button>
+        <button @click="createScript()">
+            {{creating ? "Идет создание сценария" : "Создать сценарий"}}
+        </button>
     </div>
     <div class="start-stop">
         <button :class="{loopActive: valuesStore.startScript.staticLoop}" @click="valuesStore.startScript.staticLoop = !valuesStore.startScript.staticLoop">Цикличное воспроизведение</button>
@@ -49,6 +51,7 @@ export default{
     data(){
         return{
             another: false,
+            creating: false,
         }
     },
     methods:{
@@ -63,6 +66,11 @@ export default{
         setHeight(height){
             this.valuesStore.createScript.height = height;
         },
+        createScript(){
+            this.creating = true;
+            setTimeout(() => this.creating = false, 2000);
+            this.sendReport("create");
+        },
         setupScript(){
             if (this.valuesStore.startScript.staticLoop == false){
                 setTimeout(() => {this.valuesStore.startScript.staticIsStarted = false; this.sendReport(this.valuesStore.startScript.staticLoop);}, 2000);
@@ -71,7 +79,9 @@ export default{
         },
         sendReport(isLoop){
             let desc;
-            if(isLoop == true){
+            if(isLoop == 'create') {
+                desc = "Создание сценария";
+            } else if(isLoop == true) {
                 desc = (this.valuesStore.startScript.staticLoop && this.valuesStore.startScript.staticIsStarted) ? 'Запущен статический режим (циклично)' : 'Остановлен статический режим (циклично)'
             } else {
                 desc = this.valuesStore.startScript.staticIsStarted ? 'Запущен статический режим' : 'Остановлен статический режим';
