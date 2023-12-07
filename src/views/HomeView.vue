@@ -1,5 +1,7 @@
 <template>
 <div class="container">
+  <statusView />
+  <Icon v-if="status.isVisible == false" class="info-icon" @mouseover="status.isVisible = true" icon="akar-icons:info-fill" />
   <div class="map">
     <l-map 
       :options="{attributionControl:false, zoomControl:false}"
@@ -59,6 +61,7 @@ import SpoofingView from '@/components/spoofing/SpoofingView.vue';
 import ReportsView from '@/components/reports/ReportsView.vue';
 import SystemView from '@/components/system/SystemView.vue';
 import SettingsView from '@/components/settings/SettingsView.vue';
+import statusView from '@/components/statusView.vue';
 import "leaflet/dist/leaflet.css";
 // import axios from 'axios'
 import { 
@@ -74,9 +77,11 @@ import {
 } from "@vue-leaflet/vue-leaflet";
 import {useValuesStore} from '@/store/index.js'
 import {mapStores} from 'pinia';
+import { Icon } from '@iconify/vue';
 export default{
   computed:{
-    ...mapStores(useValuesStore)
+    ...mapStores(useValuesStore),
+    status(){return this.valuesStore.statusInfo}
   },
   props:['page'],
   components:{
@@ -90,6 +95,8 @@ export default{
     LMarker,
     LCircle,
     LPolyline,
+    statusView,
+    Icon,
   },
   data(){
     return{}
@@ -135,9 +142,22 @@ export default{
   width: 100%;
   display: grid;
   grid-template-columns: 1fr 600px;
+  position: relative;
+  .info-icon{
+    position: absolute;
+    z-index: 4;
+    top: 1%;
+    left: 1%;
+    font-size: 1.4rem;
+    &:hover{
+      color: gray;
+      cursor: pointer;
+    }
+  }
   .map{
     grid-column: 1;
     background-color: rgb(212, 146, 45);
+    z-index: 2;
   }
   .tools{
     grid-column: 2;

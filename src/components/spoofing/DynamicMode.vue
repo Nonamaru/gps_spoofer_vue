@@ -28,15 +28,16 @@
         <button @click="calcDistance()" id="calcButton">
             {{ scriptReady ? "Расчет завершен!" : "Расчитать" }}
         </button>
+        <button @click="valuesStore.timeOver()">click</button>
     </div>
     <div class="start-stop">
-        <button :class="{loopActive: valuesStore.startScript.dynamicLoop}" @click="valuesStore.startScript.dynamicLoop = !valuesStore.startScript.dynamicLoop">Цикличное воспроизведение</button>
+        <button :class="{loopActive: startScript.dynamicLoop}" @click="startScript.dynamicLoop = !startScript.dynamicLoop">Цикличное воспроизведение</button>
         <div>
-            <button :class="{ButtonActive: valuesStore.startScript.dynamicIsStarted}">
-                <text v-if="!valuesStore.startScript.dynamicIsStarted" @click="valuesStore.startScript.dynamicIsStarted = true; setupScript()">Запустить</text>
-                <text v-if="valuesStore.startScript.dynamicIsStarted">Запущено!</text>
+            <button :class="{ButtonActive: startScript.dynamicIsStarted}">
+                <text v-if="!startScript.dynamicIsStarted" @click="startScript.dynamicIsStarted = true; setupScript()">Запустить</text>
+                <text v-if="startScript.dynamicIsStarted">Запущено!</text>
             </button>
-            <button v-if="valuesStore.startScript.dynamicIsStarted && valuesStore.startScript.dynamicLoop" @click="valuesStore.startScript.dynamicIsStarted = false">Остановить</button>
+            <button v-if="startScript.dynamicIsStarted && startScript.dynamicLoop" @click="stopScript()">Остановить</button>
         </div>
     </div>
 </div>
@@ -47,7 +48,10 @@ import {mapStores} from 'pinia';
 import axios from 'axios';
 export default{
     computed:{
-        ...mapStores(useValuesStore)
+        ...mapStores(useValuesStore),
+        requests(){return this.valuesStore.requests},
+        startScript(){return this.valuesStore.startScript},
+        status(){return this.valuesStore.statusInfo},
     },
     data(){
         return{
@@ -139,19 +143,43 @@ export default{
             //   });
         },
         setupScript(){
-            if (this.valuesStore.startScript.dynamicLoop == false){
-                setTimeout(() => {this.valuesStore.startScript.dynamicIsStarted = false; this.sendReport(this.valuesStore.startScript.dynamicLoop);}, 2000);
+            if (this.startScript.dynamicLoop == false){
+                this.status.isVisible = true;
+                this.status.name = 'Запущен динамический спуфинг!';
+                this.status.isStarted = true;
+                setTimeout(() => {
+                    this.startScript.dynamicIsStarted = false; 
+                    this.status.name = 'Работа спуфинга завершена!';
+                    this.status.isStarted = false;
+                    setTimeout(() => {
+                        this.status.isVisible = false;
+                    }, 6000);
+                    this.sendReport(this.startScript.dynamicLoop);
+                }, 6000);
+            } else {
+                this.sendReport(this.startScript.dynamicLoop);
+                this.status.name = 'Динамический спуфинг работает циклично!';
+                this.status.isStarted = true;
+                this.status.isVisible = true;
             }
-            this.sendReport(this.valuesStore.startScript.dynamicLoop);
+        },
+        stopScript(){
+            this.startScript.dynamicIsStarted = false;
+            this.sendReport(this.startScript.dynamicLoop);
+            this.status.name = 'Остановлен цикличный спуфинг!';
+            this.status.isStarted = false;
+            setTimeout(() => {
+                this.status.isVisible = false;
+            }, 2000);
         },
         sendReport(isLoop){
             let desc;
             if (isLoop == 'calculate'){
                 desc = "Расчет скрипта";
             } else if(isLoop == true){
-                desc = (this.valuesStore.startScript.dynamicLoop && this.valuesStore.startScript.dynamicIsStarted) ? 'Запущен динамический режим (циклично)' : 'Остановлен динамический режим (циклично)'
+                desc = (this.startScript.dynamicLoop && this.startScript.dynamicIsStarted) ? 'Запущен динамический режим (циклично)' : 'Остановлен динамический режим (циклично)'
             } else {
-                desc = this.valuesStore.startScript.dynamicIsStarted ? 'Запущен динамический режим' : 'Остановлен динамический режим';
+                desc = this.startScript.dynamicIsStarted ? 'Запущен динамический режим' : 'Завершён динамический режим';
             }
             const body = {
                 date: `${new Date().toJSON().slice(0, 10)}`, 
@@ -161,7 +189,7 @@ export default{
             const headers = {
               'Content-Type': 'application/x-www-form-urlencoded'
             }
-            axios.post("https://localhost:8081/writeReport", body, {headers});
+            axios.post(`${this.requests.host+this.requests.writeReport}`, body, {headers});
         }
     }
 }

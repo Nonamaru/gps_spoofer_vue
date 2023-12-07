@@ -69,7 +69,7 @@ export default{
             const headers = {
               'Content-Type': 'application/x-www-form-urlencoded'
             }
-            axios.post("https://localhost:8081/writeReport", body, {headers});
+            axios.post(`${this.valuesStore.requests.host+this.valuesStore.requests.writeReport}`, body, {headers});
         }
     },
     mounted(){

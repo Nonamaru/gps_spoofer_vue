@@ -50,7 +50,7 @@ export default{
     data(){
         return{
             isUpdateButton: false,
-            updateButtonStatus: 'Update'
+            updateButtonStatus: 'Обновить'
         }
     },
     methods:{
@@ -60,22 +60,28 @@ export default{
               this.valuesStore.mapOptions.zoom = 20;
               this.valuesStore.mapOptions.circleCenter = [e.coords.latitude, e.coords.longitude];
             });
-            this.sendReport();
+            this.sendReport("update");
         },
-        sendReport(){
+        sendReport(isWho){
+            let desc;
+            if (isWho == 'update'){
+                desc = 'Поиск устройства';
+            } else if (isWho == 'search'){
+                desc = 'Обновление данных GPS';
+            }
             const body = {
                 date: `${new Date().toJSON().slice(0, 10)}`, 
-                desc: "Найдено устройство", 
+                desc: desc, 
                 time: `${new Date().toLocaleTimeString()}`,
             };
             const headers = {
               'Content-Type': 'application/x-www-form-urlencoded'
             }
-            axios.post("https://localhost:8081/writeReport", body, {headers});
+            axios.post(`${this.valuesStore.requests.host+this.valuesStore.requests.writeReport}`, body, {headers});
         },
         updateGps(){
-            this.updateButtonStatus = "Updating...";
-            setTimeout(() => {this.updateButtonStatus = 'Update success!'}, 2000);
+            this.updateButtonStatus = "Обновление...";
+            setTimeout(() => {this.updateButtonStatus = 'Успешно!'; this.sendReport("search")}, 2000);
         }
     },
     mounted(){

@@ -63,14 +63,24 @@ export const useValuesStore = defineStore('values', {
       polyline: false,
       circleCenter: false,
       mode: 'static',
+    },
+    statusInfo:{
+      isVisible: false,
+      name: 'turename',
+      isStarted: false,
     }
   }),
   // getters: {
   //   doubleCount: (state) => state.count * 2,
   // },
-  // actions: {
-  //   increment(e) {
-  //     this.name = e; 
-  //   },
-  // },
+  actions: {
+    timeOver(){
+      this.statusInfo.isStarted = true;
+      this.statusInfo.isVisible = true;
+      setTimeout(() => {
+        this.statusInfo.isStarted = false;
+        this.statusInfo.isVisible = false;
+      }, 2000);
+    },
+  },
 })

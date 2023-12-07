@@ -19,8 +19,13 @@
 </div>
 </template>
 <script>
+import {useValuesStore} from '@/store/index.js';
+import {mapStores} from 'pinia';
 import axios from "axios";
 export default{
+    computed:{
+        ...mapStores(useValuesStore)
+    },
     data(){
         return{
             status: false,
@@ -28,7 +33,7 @@ export default{
         }
     },
     async mounted(){
-        const response = await axios.get('https://localhost:8081/showReports');
+        const response = await axios.get(`${this.valuesStore.requests.host+this.valuesStore.requests.showReports}`);
         this.reports = response.data.reverse();
     }
 }

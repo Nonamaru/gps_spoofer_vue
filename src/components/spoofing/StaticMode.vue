@@ -24,13 +24,13 @@
         </button>
     </div>
     <div class="start-stop">
-        <button :class="{loopActive: valuesStore.startScript.staticLoop}" @click="valuesStore.startScript.staticLoop = !valuesStore.startScript.staticLoop">Цикличное воспроизведение</button>
+        <button :class="{loopActive: startScript.staticLoop}" @click="startScript.staticLoop = !startScript.staticLoop">Цикличное воспроизведение</button>
         <div>
-            <button :class="{ButtonActive: valuesStore.startScript.staticIsStarted}">
-                <text v-if="!valuesStore.startScript.staticIsStarted" @click="valuesStore.startScript.staticIsStarted = true; setupScript()">Запустить</text>
-                <text v-if="valuesStore.startScript.staticIsStarted">Запущено!</text>
+            <button :class="{ButtonActive: startScript.staticIsStarted}">
+                <text v-if="!startScript.staticIsStarted" @click="startScript.staticIsStarted = true; setupScript()">Запустить</text>
+                <text v-if="startScript.staticIsStarted">Запущено!</text>
             </button>
-            <button v-if="valuesStore.startScript.staticIsStarted && valuesStore.startScript.staticLoop" @click="valuesStore.startScript.staticIsStarted = false; this.sendReport(this.valuesStore.startScript.staticLoop);">Остановить</button>
+            <button v-if="startScript.staticIsStarted && startScript.staticLoop" @click="stopScript()">Остановить</button>
         </div>
     </div>
 </div>
@@ -46,7 +46,10 @@ export default{
         return { cookies };
     },
     computed:{
-        ...mapStores(useValuesStore)
+        ...mapStores(useValuesStore),
+        requests(){return this.valuesStore.requests},
+        startScript(){return this.valuesStore.startScript},
+        status(){return this.valuesStore.statusInfo}
     },
     data(){
         return{
@@ -72,19 +75,43 @@ export default{
             this.sendReport("create");
         },
         setupScript(){
-            if (this.valuesStore.startScript.staticLoop == false){
-                setTimeout(() => {this.valuesStore.startScript.staticIsStarted = false; this.sendReport(this.valuesStore.startScript.staticLoop);}, 2000);
+            if (this.startScript.staticLoop == false){
+                this.status.isVisible = true;
+                this.status.name = 'Запущен статический спуфинг!';
+                this.status.isStarted = true;
+                setTimeout(() => {
+                    this.startScript.staticIsStarted = false;
+                    this.status.name = 'Работа спуфинга завершена!';
+                    this.status.isStarted = false;
+                    setTimeout(() => {
+                        this.status.isVisible = false;
+                    }, 6000);
+                    this.sendReport(this.startScript.staticLoop);
+                }, 6000);
+            } else {
+                this.sendReport(this.startScript.staticLoop);
+                this.status.name = 'Статический спуфинг работает циклично!';
+                this.status.isStarted = true;
+                this.status.isVisible = true;
             }
-            this.sendReport(this.valuesStore.startScript.staticLoop);
+        },
+        stopScript(){
+            this.startScript.staticIsStarted = false; 
+            this.sendReport(this.startScript.staticLoop);
+            this.status.name = 'Остановлен цикличный спуфинг!';
+            this.status.isStarted = false;
+            setTimeout(() => {
+                this.status.isVisible = false;
+            }, 2000);
         },
         sendReport(isLoop){
             let desc;
             if(isLoop == 'create') {
                 desc = "Создание сценария";
             } else if(isLoop == true) {
-                desc = (this.valuesStore.startScript.staticLoop && this.valuesStore.startScript.staticIsStarted) ? 'Запущен статический режим (циклично)' : 'Остановлен статический режим (циклично)'
+                desc = (this.startScript.staticLoop && this.startScript.staticIsStarted) ? 'Запущен статический режим (циклично)' : 'Остановлен статический режим (циклично)'
             } else {
-                desc = this.valuesStore.startScript.staticIsStarted ? 'Запущен статический режим' : 'Остановлен статический режим';
+                desc = this.startScript.staticIsStarted ? 'Запущен статический режим' : 'Завершён статический режим';
             }
             const body = {
                 date: `${new Date().toJSON().slice(0, 10)}`, 
@@ -94,7 +121,7 @@ export default{
             const headers = {
               'Content-Type': 'application/x-www-form-urlencoded'
             }
-            axios.post("https://localhost:8081/writeReport", body, {headers});
+            axios.post(`${this.requests.host+this.requests.writeReport}`, body, {headers});
         }
     }
 }
