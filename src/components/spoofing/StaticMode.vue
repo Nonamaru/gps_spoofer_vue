@@ -40,6 +40,7 @@ import {useValuesStore} from '@/store/index.js';
 import {mapStores} from 'pinia';
 import {useCookies} from "vue3-cookies";
 import axios from 'axios';
+import {socket} from '@/socket';
 export default{
     setup(){
         const { cookies } = useCookies();
@@ -70,39 +71,43 @@ export default{
             this.valuesStore.createScript.height = height;
         },
         createScript(){
+            socket.emit('static', this.valuesStore.createScript);
+            this.status.name = 'Создание сценария!';
+            this.valuesStore.timeOver(true);
             this.creating = true;
-            setTimeout(() => this.creating = false, 2000);
+            socket.on('static', (data) => {
+                if (data == 'Make simulation completed'){
+                    this.creating = false;
+                    this.valuesStore.isDone('Сценарий создан!');
+                } else {
+                    this.status.systemMessage = data;
+                }
+                // this.status.systemMessage = new TextDecoder().decode(data);
+            });
             this.sendReport("create");
         },
         setupScript(){
             if (this.startScript.staticLoop == false){
-                this.status.isVisible = true;
                 this.status.name = 'Запущен статический спуфинг!';
-                this.status.isStarted = true;
+                this.valuesStore.timeOver(true);
                 setTimeout(() => {
                     this.startScript.staticIsStarted = false;
-                    this.status.name = 'Работа спуфинга завершена!';
-                    this.status.isStarted = false;
-                    setTimeout(() => {
-                        this.status.isVisible = false;
-                    }, 6000);
+                    // this.status.name = 'Работа спуфинга завершена!';
+                    // this.valuesStore.timeOver(false);
+                    this.valuesStore.isDone('Работа спуфинга завершена!');
                     this.sendReport(this.startScript.staticLoop);
                 }, 6000);
             } else {
                 this.sendReport(this.startScript.staticLoop);
                 this.status.name = 'Статический спуфинг работает циклично!';
-                this.status.isStarted = true;
-                this.status.isVisible = true;
+                this.valuesStore.timeOver(true);
             }
         },
         stopScript(){
             this.startScript.staticIsStarted = false; 
             this.sendReport(this.startScript.staticLoop);
             this.status.name = 'Остановлен цикличный спуфинг!';
-            this.status.isStarted = false;
-            setTimeout(() => {
-                this.status.isVisible = false;
-            }, 2000);
+            this.valuesStore.timeOver(false);
         },
         sendReport(isLoop){
             let desc;

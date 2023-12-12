@@ -25,10 +25,9 @@
                 <div class="option" :class="{selectedOption: valuesStore.calculateScript.speed == 0.005}" @click="valuesStore.calculateScript.speed = 0.005" >166 км/ч</div>
             </div>
         </span>
-        <button @click="calcDistance()" id="calcButton">
-            {{ scriptReady ? "Расчет завершен!" : "Расчитать" }}
+        <button @click="calcDistance()" :class="{isCalculating: scriptReady}">
+            {{ scriptReady ? "Идет расчет" : "Расчитать" }}
         </button>
-        <button @click="valuesStore.timeOver()">click</button>
     </div>
     <div class="start-stop">
         <button :class="{loopActive: startScript.dynamicLoop}" @click="startScript.dynamicLoop = !startScript.dynamicLoop">Цикличное воспроизведение</button>
@@ -46,6 +45,7 @@
 import {useValuesStore} from '@/store/index.js';
 import {mapStores} from 'pinia';
 import axios from 'axios';
+import {socket} from '@/socket';
 export default{
     computed:{
         ...mapStores(useValuesStore),
@@ -61,8 +61,6 @@ export default{
     },
     methods:{
         calcDistance(){
-            document.getElementById('calcButton').innerHTML = 'Идет расчет';
-            document.getElementById('calcButton').disabled = true;
             var latitude1 = this.valuesStore.mapOptions.markers[0].lat;
             var longitude1 = this.valuesStore.mapOptions.markers[0].lng;
             var latitude2 = this.valuesStore.mapOptions.markers[1].lat;
@@ -130,11 +128,22 @@ export default{
             }
             // send csvPointsArray to PHP;
             console.log(csvPointsArray);
-            document.getElementById('calcButton').innerHTML = 'Расчитать';
-            document.getElementById('calcButton').disabled = false;
+            
+            socket.emit("dynamic", csvPointsArray);
+            this.status.name = 'Идет расчет!';
+            this.valuesStore.timeOver(true);
             this.scriptReady = true;
-            setTimeout(() => {this.scriptReady = false}, 2000);
-            this.sendReport("calculate");
+            socket.on("dynamic", (data) => {
+                console.log(data)
+                if (data == 'Make simulation completed'){
+                    this.scriptReady = false;
+                    this.valuesStore.isDone('Расчет прошел успешно!');
+                } else {
+                    this.status.systemMessage = data;
+                }
+            })
+            // this.sendReport("calculate");
+
             // document.getElementById('calcButton').innerHTML = 'Создание сценария';
             // send({x: 'csvFile', file: csvPointsArray}, './post.php')
             //   .then(() => {
@@ -144,33 +153,25 @@ export default{
         },
         setupScript(){
             if (this.startScript.dynamicLoop == false){
-                this.status.isVisible = true;
                 this.status.name = 'Запущен динамический спуфинг!';
-                this.status.isStarted = true;
+                this.valuesStore.timeOver(true);
                 setTimeout(() => {
                     this.startScript.dynamicIsStarted = false; 
                     this.status.name = 'Работа спуфинга завершена!';
-                    this.status.isStarted = false;
-                    setTimeout(() => {
-                        this.status.isVisible = false;
-                    }, 6000);
+                    this.valuesStore.timeOver(false);
                     this.sendReport(this.startScript.dynamicLoop);
                 }, 6000);
             } else {
                 this.sendReport(this.startScript.dynamicLoop);
                 this.status.name = 'Динамический спуфинг работает циклично!';
-                this.status.isStarted = true;
-                this.status.isVisible = true;
+                this.valuesStore.timeOver(true);
             }
         },
         stopScript(){
             this.startScript.dynamicIsStarted = false;
             this.sendReport(this.startScript.dynamicLoop);
             this.status.name = 'Остановлен цикличный спуфинг!';
-            this.status.isStarted = false;
-            setTimeout(() => {
-                this.status.isVisible = false;
-            }, 2000);
+            this.valuesStore.timeOver(false);
         },
         sendReport(isLoop){
             let desc;
@@ -254,6 +255,12 @@ export default{
                 background-color: var(--button-all-color);
                 color: white;
             }
+        }
+        .isCalculating{
+            background-color: var(--button-all-color);
+            color: white;
+            font-weight: bold;
+            pointer-events: none;
         }
     }
     .start-stop{

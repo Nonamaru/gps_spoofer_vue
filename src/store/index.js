@@ -16,6 +16,7 @@ import {defineStore} from 'pinia'
 
 export const useValuesStore = defineStore('values', {
   state: () => ({ 
+    version: "1.0",
     requests:{
       host: 'https://localhost:8081',
       showReports: '/showReports',
@@ -66,21 +67,31 @@ export const useValuesStore = defineStore('values', {
     },
     statusInfo:{
       isVisible: false,
-      name: 'turename',
       isStarted: false,
+      name: 'Действий не было',
+      systemMessage: null,
     }
   }),
   // getters: {
   //   doubleCount: (state) => state.count * 2,
   // },
   actions: {
-    timeOver(){
-      this.statusInfo.isStarted = true;
-      this.statusInfo.isVisible = true;
-      setTimeout(() => {
+    timeOver(isStart){
+      if(isStart){
+        this.statusInfo.isStarted = true;
+        this.statusInfo.isVisible = true;
+      } else {
         this.statusInfo.isStarted = false;
-        this.statusInfo.isVisible = false;
-      }, 2000);
+        this.statusInfo.isVisible = true;
+        setTimeout(() => {
+          this.statusInfo.isVisible = false;
+        }, 6000);
+      }
     },
+    isDone(name){
+      this.statusInfo.name = name;
+      this.statusInfo.systemMessage = null;
+      this.timeOver(false);
+    }
   },
 })
