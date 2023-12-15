@@ -126,52 +126,30 @@ export default{
                 csvPointsArray.push(csvPoints);
                 num = num + 0.1;
             }
-            // send csvPointsArray to PHP;
-            console.log(csvPointsArray);
             
             socket.emit("dynamic", csvPointsArray);
             this.status.name = 'Идет расчет!';
             this.valuesStore.timeOver(true);
             this.scriptReady = true;
-            socket.on("dynamic", (data) => {
-                console.log(data)
-                if (data == 'Make simulation completed'){
-                    this.scriptReady = false;
-                    this.valuesStore.isDone('Расчет прошел успешно!');
-                } else {
-                    this.status.systemMessage = data;
-                }
-            })
-            // this.sendReport("calculate");
-
-            // document.getElementById('calcButton').innerHTML = 'Создание сценария';
-            // send({x: 'csvFile', file: csvPointsArray}, './post.php')
-            //   .then(() => {
-            //     document.getElementById('calcButton').innerHTML = 'Расчитать';
-            //     document.getElementById('calcButton').disabled = false;
-            //   });
         },
         setupScript(){
             if (this.startScript.dynamicLoop == false){
+                socket.emit('loop', {script: 'dynamic', loop: false});
                 this.status.name = 'Запущен динамический спуфинг!';
                 this.valuesStore.timeOver(true);
-                setTimeout(() => {
-                    this.startScript.dynamicIsStarted = false; 
-                    this.status.name = 'Работа спуфинга завершена!';
-                    this.valuesStore.timeOver(false);
-                    this.sendReport(this.startScript.dynamicLoop);
-                }, 6000);
-            } else {
                 this.sendReport(this.startScript.dynamicLoop);
+            } else {
+                socket.emit('loop', {script: 'dynamic', loop: true});
                 this.status.name = 'Динамический спуфинг работает циклично!';
                 this.valuesStore.timeOver(true);
+                this.sendReport(this.startScript.dynamicLoop);
             }
         },
         stopScript(){
+            socket.emit('kill_loop');
             this.startScript.dynamicIsStarted = false;
             this.sendReport(this.startScript.dynamicLoop);
-            this.status.name = 'Остановлен цикличный спуфинг!';
-            this.valuesStore.timeOver(false);
+            this.valuesStore.isDone('Остановлен цикличный спуфинг!');
         },
         sendReport(isLoop){
             let desc;
@@ -192,6 +170,27 @@ export default{
             }
             axios.post(`${this.requests.host+this.requests.writeReport}`, body, {headers});
         }
+    },
+    mounted(){
+        socket.on("dynamic", (data) => {
+            console.log(data)
+            if (data == 'Make simulation completed'){
+                this.scriptReady = false;
+                this.valuesStore.isDone('Расчет прошел успешно!');
+                this.sendReport("calculate");
+            } else {
+                this.status.systemMessage = new TextDecoder().decode(data);
+            }
+        });
+        socket.on('dynamic_sim', (data) => {
+            data = new TextDecoder().decode(data);
+            if (data == 'End simulation'){
+                this.startScript.dynamicIsStarted = false;
+                this.valuesStore.isDone('Работа спуфинга завершена!');
+                this.sendReport(this.startScript.dynamicLoop);
+            } 
+            else {this.status.systemMessage = data;}
+        })
     }
 }
 </script>

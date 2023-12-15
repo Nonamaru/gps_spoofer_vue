@@ -26,6 +26,7 @@ import { useValuesStore } from '@/store/index.js';
 import { mapStores } from 'pinia';
 import { useCookies } from "vue3-cookies";
 import axios from 'axios';
+import {socket} from '@/socket';
 export default{
     setup() {
         const { cookies } = useCookies();
@@ -59,6 +60,7 @@ export default{
         },
         setGpsL2(data){
             this.cookies.set("gpsl2", data);
+            socket.emit('l2', data);
         },
         sendReport(){
             const body = {
@@ -74,6 +76,7 @@ export default{
     },
     mounted(){
         this.gpsl2 = (() => {return(/^true$/i.test(this.cookies.get("gpsl2")))})();
+        socket.on('gps', (data) => {console.log(data)});
     }
 }
 </script>

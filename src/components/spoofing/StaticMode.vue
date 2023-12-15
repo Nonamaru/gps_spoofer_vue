@@ -75,39 +75,25 @@ export default{
             this.status.name = 'Создание сценария!';
             this.valuesStore.timeOver(true);
             this.creating = true;
-            socket.on('static', (data) => {
-                if (data == 'Make simulation completed'){
-                    this.creating = false;
-                    this.valuesStore.isDone('Сценарий создан!');
-                } else {
-                    this.status.systemMessage = data;
-                }
-                // this.status.systemMessage = new TextDecoder().decode(data);
-            });
-            this.sendReport("create");
         },
         setupScript(){
             if (this.startScript.staticLoop == false){
+                socket.emit('loop', {script: 'static', loop: false});
                 this.status.name = 'Запущен статический спуфинг!';
                 this.valuesStore.timeOver(true);
-                setTimeout(() => {
-                    this.startScript.staticIsStarted = false;
-                    // this.status.name = 'Работа спуфинга завершена!';
-                    // this.valuesStore.timeOver(false);
-                    this.valuesStore.isDone('Работа спуфинга завершена!');
-                    this.sendReport(this.startScript.staticLoop);
-                }, 6000);
-            } else {
                 this.sendReport(this.startScript.staticLoop);
+            } else {
+                socket.emit('loop', {script: 'static', loop: true});
                 this.status.name = 'Статический спуфинг работает циклично!';
                 this.valuesStore.timeOver(true);
+                this.sendReport(this.startScript.staticLoop);
             }
         },
         stopScript(){
+            socket.emit('kill_loop');
             this.startScript.staticIsStarted = false; 
             this.sendReport(this.startScript.staticLoop);
-            this.status.name = 'Остановлен цикличный спуфинг!';
-            this.valuesStore.timeOver(false);
+            this.valuesStore.isDone('Остановлен цикличный спуфинг!');
         },
         sendReport(isLoop){
             let desc;
@@ -128,6 +114,25 @@ export default{
             }
             axios.post(`${this.requests.host+this.requests.writeReport}`, body, {headers});
         }
+    },
+    mounted(){
+        socket.on('static', (data) => {
+            if (data == 'Make simulation completed'){
+                this.creating = false;
+                this.valuesStore.isDone('Сценарий создан!');
+                this.sendReport("create");
+            }
+            else {this.status.systemMessage = new TextDecoder().decode(data);}
+        });
+        socket.on('static_sim', (data) => {
+            data = new TextDecoder().decode(data);
+            if (data == 'End simulation'){
+                this.startScript.staticIsStarted = false;
+                this.valuesStore.isDone('Работа спуфинга завершена!');
+                this.sendReport(this.startScript.staticLoop);
+            } 
+            else {this.status.systemMessage = data;}
+        })
     }
 }
 </script>

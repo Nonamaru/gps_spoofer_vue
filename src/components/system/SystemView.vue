@@ -13,8 +13,10 @@
                     @mouseover="isUpdateButton = true"
                     @mouseleave="isUpdateButton = false"
                 >
-                    <text v-if="!isUpdateButton">{{valuesStore.systemOpions.lastUpdate}}</text>
-                    <button class="update-button" v-if="isUpdateButton" @click="updateGps()">{{ updateButtonStatus }}</button>
+                    <text v-if="!isUpdateButton" style="text-decoration: underline;">
+                        {{valuesStore.systemOpions.lastUpdate}}
+                    </text>
+                    <text class="update-button" v-if="isUpdateButton" @click="updateGps()">{{ updateButtonStatus }}</text>
                 </td>
             </tr>
             <tr>
@@ -40,6 +42,8 @@ import {useValuesStore} from '@/store/index.js';
 import {mapStores} from 'pinia';
 import axios from 'axios';
 import {state} from "@/socket";
+// import socket from 'socket.io-client/lib/socket';
+import {socket} from '@/socket';
 export default{
     computed:{
         ...mapStores(useValuesStore),
@@ -60,13 +64,13 @@ export default{
               this.valuesStore.mapOptions.zoom = 20;
               this.valuesStore.mapOptions.circleCenter = [e.coords.latitude, e.coords.longitude];
             });
-            this.sendReport("update");
+            this.sendReport("search");
         },
         sendReport(isWho){
             let desc;
-            if (isWho == 'update'){
+            if (isWho == 'search'){
                 desc = 'Поиск устройства';
-            } else if (isWho == 'search'){
+            } else if (isWho == 'update'){
                 desc = 'Обновление данных GPS';
             }
             const body = {
@@ -81,11 +85,17 @@ export default{
         },
         updateGps(){
             this.updateButtonStatus = "Обновление...";
-            setTimeout(() => {this.updateButtonStatus = 'Успешно!'; this.sendReport("search")}, 2000);
+            socket.emit('update_brdc');
         }
     },
     mounted(){
         this.valuesStore.systemOpions.isConnect = state.connected;
+        socket.on('update', (data) => {
+            if (data == 'BRDC Recived'){
+                this.updateButtonStatus = 'Успешно!'; 
+                this.sendReport("update");
+            }
+        })
     }
 }
 </script>
@@ -115,20 +125,10 @@ export default{
                 padding: 4px 8px;
                 border-radius: var(--border-radius);
                 .update-button{
-                    border: 1px solid black;
-                    width: 90%;
-                    height: 90%;
-                    background-color: lightgray;
-                    font-size: 1rem;
-                    padding: 4px 8px;
-                    border-radius: var(--border-radius);
+                    font-size: 1.4rem;
+                    text-decoration: underline;
                     color: var(--text-color);
                     cursor: pointer;
-                    &:active{
-                        background-color: black;
-                        color: white;
-                        font-weight: bold;
-                    }
                 }
             }
             .find{
