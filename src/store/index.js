@@ -18,7 +18,7 @@ export const useValuesStore = defineStore('values', {
   state: () => ({ 
     version: "1.0",
     requests:{
-      host: 'https://localhost:8081',
+      host: 'https://192.168.0.121:8081',
       showReports: '/showReports',
       writeReport: '/writeReport'
     },

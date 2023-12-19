@@ -81,12 +81,12 @@ export default{
                 socket.emit('loop', {script: 'static', loop: false});
                 this.status.name = 'Запущен статический спуфинг!';
                 this.valuesStore.timeOver(true);
-                this.sendReport(this.startScript.staticLoop);
+                // this.sendReport(this.startScript.staticLoop);
             } else {
                 socket.emit('loop', {script: 'static', loop: true});
                 this.status.name = 'Статический спуфинг работает циклично!';
                 this.valuesStore.timeOver(true);
-                this.sendReport(this.startScript.staticLoop);
+                // this.sendReport(this.startScript.staticLoop);
             }
         },
         stopScript(){
@@ -117,21 +117,40 @@ export default{
     },
     mounted(){
         socket.on('static', (data) => {
-            if (data == 'Make simulation completed'){
+            data = new TextDecoder().decode(data);
+            if (data.trim() == '2024'){
                 this.creating = false;
                 this.valuesStore.isDone('Сценарий создан!');
                 this.sendReport("create");
             }
-            else {this.status.systemMessage = new TextDecoder().decode(data);}
+            else {
+                this.status.name = 'Создание сценария!';
+                this.status.isStarted = true;
+                this.creating = true;
+                this.status.systemMessage = data;
+            }
         });
         socket.on('static_sim', (data) => {
             data = new TextDecoder().decode(data);
-            if (data == 'End simulation'){
+            if (data.trim() == 'End simulation'){
                 this.startScript.staticIsStarted = false;
                 this.valuesStore.isDone('Работа спуфинга завершена!');
                 this.sendReport(this.startScript.staticLoop);
             } 
-            else {this.status.systemMessage = data;}
+            else {
+                this.status.systemMessage = data;
+                this.startScript.staticIsStarted = true;
+                this.status.isStarted = true;
+                this.status.name = 'Запущен статический спуфинг!';
+            }
+        });
+        socket.on('static_loop_sim', (data) => {
+            data = new TextDecoder().decode(data);
+            this.status.systemMessage = data;
+            this.startScript.staticIsStarted = true;
+            this.status.name = 'Cтатический спуфинг работает циклично!';
+            this.status.isStarted = true;
+            this.startScript.staticLoop = true;
         })
     }
 }

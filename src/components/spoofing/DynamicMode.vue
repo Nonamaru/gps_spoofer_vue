@@ -173,23 +173,39 @@ export default{
     },
     mounted(){
         socket.on("dynamic", (data) => {
-            console.log(data)
-            if (data == 'Make simulation completed'){
+            data = new TextDecoder().decode(data);
+            if (data.trim() == 'Make simulation completed'){
                 this.scriptReady = false;
                 this.valuesStore.isDone('Расчет прошел успешно!');
                 this.sendReport("calculate");
             } else {
-                this.status.systemMessage = new TextDecoder().decode(data);
+                this.status.systemMessage = data;
+                this.status.name = 'Идет расчет!';
+                this.status.isStarted = true;
+                this.scriptReady = true;
             }
         });
         socket.on('dynamic_sim', (data) => {
             data = new TextDecoder().decode(data);
-            if (data == 'End simulation'){
+            if (data.trim() == 'End simulation'){
                 this.startScript.dynamicIsStarted = false;
                 this.valuesStore.isDone('Работа спуфинга завершена!');
                 this.sendReport(this.startScript.dynamicLoop);
             } 
-            else {this.status.systemMessage = data;}
+            else {
+                this.status.systemMessage = data;
+                this.startScript.dynamicIsStarted = true;
+                this.status.isStarted = true;
+                this.status.name = 'Запущен динамический спуфинг!';
+            }
+        });
+        socket.on('dynamic_loop_sim', (data) => {
+            data = new TextDecoder().decode(data);
+            this.status.systemMessage = data;
+            this.startScript.dynamicIsStarted = true;
+            this.status.name = 'Динамический спуфинг работает циклично!';
+            this.status.isStarted = true;
+            this.startScript.dynamicLoop = true;
         })
     }
 }
