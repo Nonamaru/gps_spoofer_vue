@@ -91,10 +91,18 @@ export default{
     mounted(){
         this.valuesStore.systemOpions.isConnect = state.connected;
         socket.on('update', (data) => {
-            if (data == 'BRDC Recived'){
+            if (data.trim() == 'BRDC Recived'){
                 this.updateButtonStatus = 'Успешно!'; 
                 this.sendReport("update");
             }
+        });
+        socket.emit('system_view');
+        socket.on('system', (data) => {
+            console.log(data);
+            data = JSON.parse(data);
+            this.valuesStore.systemOpions.ip = data.ip;
+            this.valuesStore.systemOpions.lastUpdate = data.brdcDate;
+            this.valuesStore.systemOpions.freeSpace = data.memory+"GB";
         })
     }
 }
