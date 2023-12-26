@@ -133,6 +133,7 @@ export default{
       this.valuesStore.mapOptions.center = [e.coords.latitude, e.coords.longitude];
       this.valuesStore.mapOptions.zoom = 20;
       this.valuesStore.mapOptions.circleCenter = [e.coords.latitude, e.coords.longitude];
+      alert(`Мы определили ваше местоположение здесь:\nДолгота: ${e.coords.latitude}\nШирота: ${e.coords.longitude}`);
     });
   }
 }
