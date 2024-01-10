@@ -56,6 +56,7 @@ export default{
         return{
             another: false,
             creating: false,
+            isKilled: false,
         }
     },
     methods:{
@@ -81,12 +82,14 @@ export default{
                 socket.emit('loop', {script: 'static', loop: false});
                 this.status.name = 'Запущен статический спуфинг!';
                 this.valuesStore.timeOver(true);
-                // this.sendReport(this.startScript.staticLoop);
+                this.sendReport(this.startScript.staticLoop);
+                this.isKilled = false;
             } else {
                 socket.emit('loop', {script: 'static', loop: true});
                 this.status.name = 'Статический спуфинг работает циклично!';
                 this.valuesStore.timeOver(true);
-                // this.sendReport(this.startScript.staticLoop);
+                this.sendReport(this.startScript.staticLoop);
+                this.isKilled = false;
             }
         },
         stopScript(){
@@ -94,6 +97,7 @@ export default{
             this.startScript.staticIsStarted = false; 
             this.sendReport(this.startScript.staticLoop);
             this.valuesStore.isDone('Остановлен цикличный спуфинг!');
+            this.isKilled = true;
         },
         sendReport(isLoop){
             let desc;
@@ -145,12 +149,14 @@ export default{
             }
         });
         socket.on('static_loop_sim', (data) => {
-            data = new TextDecoder().decode(data);
-            this.status.systemMessage = data;
-            this.startScript.staticIsStarted = true;
-            this.status.name = 'Cтатический спуфинг работает циклично!';
-            this.status.isStarted = true;
-            this.startScript.staticLoop = true;
+            if(!this.isKilled){
+                data = new TextDecoder().decode(data);
+                this.status.systemMessage = data;
+                this.startScript.staticIsStarted = true;
+                this.status.name = 'Cтатический спуфинг работает циклично!';
+                this.status.isStarted = true;
+                this.startScript.staticLoop = true;
+            }
         })
     }
 }

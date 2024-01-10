@@ -5,8 +5,8 @@
   <div class="map">
     <l-map 
       :options="{attributionControl:false, zoomControl:false}"
-      :zoom="valuesStore.mapOptions.zoom" 
-      :center="valuesStore.mapOptions.center"
+      :zoom="map.zoom" 
+      :center="map.center"
       @update:zoom="zoomUpdated"
       @update:center="centerUpdated"
       @update:bounds="boundsUpdated"
@@ -18,7 +18,7 @@
         name="OpenStreetMap"
       ></l-tile-layer> -->
       <l-tile-layer
-        v-for="tileProvider in valuesStore.mapOptions.tileProviders"
+        v-for="tileProvider in map.tileProviders"
         :key="tileProvider.name"
         :name="tileProvider.name"
         :visible="tileProvider.visible"
@@ -28,21 +28,21 @@
       />
       <l-control-layers />
       <l-marker 
-        v-for="(marker) in valuesStore.mapOptions.markers" 
+        v-for="(marker) in map.markers" 
         :key="marker" 
         :lat-lng="marker" 
         @click="removemarker(marker)"
       ></l-marker>
-      <l-polyline v-if="valuesStore.mapOptions.polyline" :lat-lngs="valuesStore.mapOptions.polyline" color="#057D9F"></l-polyline>
+      <l-polyline v-if="map.polyline" :lat-lngs="map.polyline" color="#057D9F"></l-polyline>
       <l-circle 
-        v-if="valuesStore.mapOptions.circleCenter"
-        :lat-lng="valuesStore.mapOptions.circleCenter"
+        v-if="map.circleCenter"
+        :lat-lng="map.circleCenter"
         :radius="100"
         color="#61B7CF"
       />
       <l-circle 
-        v-if="valuesStore.mapOptions.circleCenter"
-        :lat-lng="valuesStore.mapOptions.circleCenter"
+        v-if="map.circleCenter"
+        :lat-lng="map.circleCenter"
         :radius="1"
         color="#057D9F"
       />
@@ -81,7 +81,9 @@ import { Icon } from '@iconify/vue';
 export default{
   computed:{
     ...mapStores(useValuesStore),
-    status(){return this.valuesStore.statusInfo}
+    status(){return this.valuesStore.statusInfo},
+    map(){return this.valuesStore.mapOptions},
+    create(){return this.valuesStore.createScript}
   },
   props:['page'],
   components:{
@@ -106,22 +108,22 @@ export default{
     async zoomUpdated (zoom) {this.zoom = zoom;},
     async centerUpdated (center) {this.center = center;},
     removemarker(index) {
-      // this.valuesStore.mapOptions.markers.splice(index, 1);
-      this.valuesStore.mapOptions.markers = this.valuesStore.mapOptions.markers.filter(element => element != index)
-      this.valuesStore.createScript.coordinates = null;
-      this.valuesStore.mapOptions.polyline = [];
+      // this.map.markers.splice(index, 1);
+      this.map.markers = this.map.markers.filter(element => element != index)
+      this.create.coordinates = null;
+      this.map.polyline = [];
     },
     addmarker(event) {
-      if (this.valuesStore.mapOptions.mode == 'static'){
-        this.valuesStore.mapOptions.markers = [event.latlng];
-        this.valuesStore.createScript.coordinates = `${event.latlng.lat},${event.latlng.lng}`;
-      } else if (this.valuesStore.mapOptions.mode == 'dynamic'){
-        if (this.valuesStore.mapOptions.markers.length < 2){
-          this.valuesStore.mapOptions.markers.push(event.latlng);
-          if (this.valuesStore.mapOptions.markers.length == 2) {
-            this.valuesStore.mapOptions.polyline = [
-              [this.valuesStore.mapOptions.markers[0].lat, this.valuesStore.mapOptions.markers[0].lng],
-              [this.valuesStore.mapOptions.markers[1].lat, this.valuesStore.mapOptions.markers[1].lng]
+      if (this.map.mode == 'static'){
+        this.map.markers = [event.latlng];
+        this.create.coordinates = `${event.latlng.lat},${event.latlng.lng}`;
+      } else if (this.map.mode == 'dynamic'){
+        if (this.map.markers.length < 2){
+          this.map.markers.push(event.latlng);
+          if (this.map.markers.length == 2) {
+            this.map.polyline = [
+              [this.map.markers[0].lat, this.map.markers[0].lng],
+              [this.map.markers[1].lat, this.map.markers[1].lng]
             ]
           }
         } 
@@ -130,9 +132,9 @@ export default{
   },
   async mounted(){
     navigator.geolocation.getCurrentPosition((e) => {
-      this.valuesStore.mapOptions.center = [e.coords.latitude, e.coords.longitude];
-      this.valuesStore.mapOptions.zoom = 20;
-      this.valuesStore.mapOptions.circleCenter = [e.coords.latitude, e.coords.longitude];
+      this.map.center = [e.coords.latitude, e.coords.longitude];
+      this.map.zoom = 20;
+      this.map.circleCenter = [e.coords.latitude, e.coords.longitude];
       alert(`Мы определили ваше местоположение здесь:\nДолгота: ${e.coords.latitude}\nШирота: ${e.coords.longitude}`);
     });
   }

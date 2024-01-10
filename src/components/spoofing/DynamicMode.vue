@@ -57,6 +57,7 @@ export default{
         return{
             another: false,
             scriptReady: false,
+            isKilled: false,
         }
     },
     methods:{
@@ -138,11 +139,13 @@ export default{
                 this.status.name = 'Запущен динамический спуфинг!';
                 this.valuesStore.timeOver(true);
                 this.sendReport(this.startScript.dynamicLoop);
+                this.isKilled = false;
             } else {
                 socket.emit('loop', {script: 'dynamic', loop: true});
                 this.status.name = 'Динамический спуфинг работает циклично!';
                 this.valuesStore.timeOver(true);
                 this.sendReport(this.startScript.dynamicLoop);
+                this.isKilled = false;
             }
         },
         stopScript(){
@@ -150,6 +153,7 @@ export default{
             this.startScript.dynamicIsStarted = false;
             this.sendReport(this.startScript.dynamicLoop);
             this.valuesStore.isDone('Остановлен цикличный спуфинг!');
+            this.isKilled = true;
         },
         sendReport(isLoop){
             let desc;
@@ -200,12 +204,14 @@ export default{
             }
         });
         socket.on('dynamic_loop_sim', (data) => {
-            data = new TextDecoder().decode(data);
-            this.status.systemMessage = data;
-            this.startScript.dynamicIsStarted = true;
-            this.status.name = 'Динамический спуфинг работает циклично!';
-            this.status.isStarted = true;
-            this.startScript.dynamicLoop = true;
+            if(!this.isKilled){
+                data = new TextDecoder().decode(data);
+                this.status.systemMessage = data;
+                this.startScript.dynamicIsStarted = true;
+                this.status.name = 'Динамический спуфинг работает циклично!';
+                this.status.isStarted = true;
+                this.startScript.dynamicLoop = true;
+            }
         })
     }
 }
